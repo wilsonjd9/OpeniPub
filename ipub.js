@@ -1,51 +1,31 @@
+// ipub.js version 0.3 BETA, January 25, 2013...maybe alpha?
+// Copyright John Wilson 2013
 
 
-// ipub.js version 0.1 BETA...maybe alpha?
-// Copyright John Wilson 2012
-
-/*! jQuery Mobile v1.1.0-rc.1 jquerymobile.com | jquery.org/license */
+//$.mobile.showPageLoadingMsg("b", "Loading and typesetting your publication. We'll have it on screen in just a second....", false);
 
 
-// Globally track paging system
 
-global_page_num = 1; 
-last_page_read = 1;
-global_total_page_portrait = 1;
-global_total_page_landscape = 1;
-global_current_orientation = 0;   // Portrait orientation is 0 and lanscape is 1
-prevent_horizontal_swipe = 0;
+//global variables
+global_page_num = 1;
 global_gap = 30;
-global_full_page = 0;
-
-port_pad = 100;
-hori_pad = 90;
-margins_leftright = 60;
-main_window_adjust = 0;
-just_scrolled_prevent = 0;
-current_px = 0;
+global_total_page = 1;
 start_px = 0;
 stop_px = 0;
-delta_px = 0;
-new_global_position = 0;
-current_page = 0;
-main_window = 0;
-just_animated = 0;
-	// OLD WAY - var main_window = $(window).width() - main_window_adjust;
+
 main_window = $('#scrollcontainer').width();
-// OLD WAY actual_page_window = main_window - hori_pad;
-actual_page_window = main_window + global_gap;
-global_position_percent = 0;
-scrolling_toc = 0;
-scrollcalled_by = "";
-chapter = 1;
-
-
 
 current_pub = getUrlVars()["pub"];
 action_pub = getUrlVars()["action"];
 if (current_pub == null) {
 	current_pub="store.cfm";
 };
+
+current_ipub = getUrlVars()["ipub"];
+if (current_ipub == null) {
+	current_ipub="-1";
+};
+
 bookmark = parseInt($.cookie("bookmark"+current_pub));
 
 current_search = getUrlVars()["search"];
@@ -69,375 +49,168 @@ if (current_sort == null) {
 	current_sort="Title";
 }
 
-// fix for orientation change on ios
+current_action = getUrlVars()["action"];
+if (current_action == null) {
+	current_action="none";
+}
 
- // @mathias
- // https://gist.github.com/901295
+current_hidetopbar = getUrlVars()["hidetopbar"];
+if (current_hidetopbar == null) {
+	current_hidetopbar="no";
+}
 
 
-// Start handling events...jquery mobile stuff
 
-$(document).ready(function() {
+//$.mobile.showPageLoadingMsg("b", "Loading and typesetting your publication. We'll have it on screen in just a second....", false);
+//alert("bookmark URL " + current_bookmark);
+//****** Good place to put a loading message....before things load
+
+//current_bookmark = parseInt(getUrlVars()["pagenum"]);
+//if (current_bookmark == null) {
+//	current_bookmark="1";
+//}
+//else
+//{
+//	$.cookie("bookmark"+current_pub, current_bookmark, { expires: 512 });
+//	$.cookie("current_bookmark", current_bookmark, { expires: 512 });
+//}
+//alert("url page num " + current_bookmark);
+
+
+$(document).bind("mobileinit", function() {	
+  $.support.touchOverflow = true;
+  $.mobile.touchOverflowEnabled = true;
+
+});
+
+
+
+$(document).bind( 'pageinit', function() {
 	
-			$.mobile.showPageLoadingMsg();
+
+
+$.mobile.showPageLoadingMsg("b", "Loading and typesetting your publication. We'll have it on screen in just a second....", false);
+
+
+if ( current_action == 'edit') {
+$("[data-role=header]").fixedtoolbar({ tapToggleBlacklist: "video, a, button, input, select, textarea, .ui-header-fixed, .ui-footer-fixed, .listing, #search-basic, #popupSearchPanel, #closesearch, #popupPanel, #storetoolbar, #previous, #next, #scroller, #edit_site_menu_id, #page_edit, #scroller, #scrollcontainer, #title, #wikiprev, #wikinext" });	
+}
+else
+{
+$("[data-role=header]").fixedtoolbar({ tapToggleBlacklist: "video, a, button, input, select, textarea, .ui-header-fixed, .ui-footer-fixed, .listing, #search-basic, #popupSearchPanel, #closesearch, #popupPanel, #storetoolbar, #previous, #next, #wikiprev, #wikinext" });
+}
+
+
+	
+
+if (current_pub == 'solartimesv2.cfm') {
+			var cf = new FTColumnflow('target', 'viewport', {
+				columnCount:           3,
+				standardiseLineHeight: true,
+				pagePadding:           30,
+			});
+
+			cf.flow(document.getElementById('flowedContent'), document.getElementById('fixedContent'));	
+}
+
+$( "#popupPanel" ).on({
+    popupbeforeposition: function() {
+        var h = $( window ).height();
+
+        $( "#popupPanel" ).css( "height", h );
+    }
+})
+
+
+
+$( "#popupSearchPanel" ).on({
+    popupbeforeposition: function() {
+        var h = $( window ).height();
+		h = h + 45;
+
+        $( "#popupSearchPanel" ).css( "height", h );
+    }
+})
+	
+$("#savedata").bind('click',function(event, ui){						
+//var data1 = CKEDITOR.instances.scroller.getData();
+var data1 = $('#scroller').html();
+var title1 = $("#edit_section_title").val();
+var file_id1 = $("#edit_file_id").val();
+var site_menu_id1 = $("#edit_site_menu_id").val();
+var state1 = $("#edit_state_val").val();
+var author1 = $("#edit_author").val();
+var site_tab_id1 = $("#edit_site_tab_id").val();
+var FiletoUploadImage1 = $("edit_FiletoUploadImage").val();
+var imagefile1 = $("edit_imagefile").val();
+var obj = { filecontent: data1,
+			section_title: title1,
+			file_id: file_id1,
+			site_menu_id: site_menu_id1,
+			state_val: state1,
+			author: author1,
+			site_tab_id: site_tab_id1,
+			FiletoUploadImage: FiletoUploadImage1,
+			imagefile: imagefile1 };
+//alert("Posting Data.");
+$.post('./savepub_process.cfm', obj, myCallbackFunction);
+//alert("Post Done.");
+
+})
+
+$("#savedataclose").bind('click',function(event, ui){						
+//var data1 = CKEDITOR.instances.scroller.getData();
+var data1 = $('#scroller').html();
+var title1 = $("#edit_section_title").val();
+var file_id1 = $("#edit_file_id").val();
+var site_menu_id1 = $("#edit_site_menu_id").val();
+var state1 = $("#edit_state_val").val();
+var gotopage1 = 'store';
+var author1 = $("#edit_author").val();
+var site_tab_id1 = $("#edit_site_tab_id").val();
+var FiletoUploadImage1 = $("edit_FiletoUploadImage").val();
+var imagefile1 = $("edit_imagefile").val();
+var obj = { filecontent: data1,
+			section_title: title1,
+			file_id: file_id1,
+			site_menu_id: site_menu_id1,
+			state_val: state1,
+			gotopage: gotopage1,
+			author: author1,
+			site_tab_id: site_tab_id1,
+			FiletoUploadImage: FiletoUploadImage1,
+			imagefile: imagefile1 };
+//alert("Posting Data.");
+$.post('./savepub_process.cfm', obj, myCallbackFunctionClose);
+//alert("Post Done.");
+
+})
+
+
+
+$("#closesearch").bind('click',function(event, ui){
+				
+				$( "#popupSearchPanel" ).popup( "close" );
 			
-	
+		})		
 
-
-	
-			$('textarea.tinymce').tinymce({
-			// Location of TinyMCE script
-			script_url : 'js/tiny_mce/tiny_mce.js',
-
-			// General options
-			theme_advanced_path : false,
-			theme : "advanced",
-			plugins : "autolink,lists,pagebreak,style,layer,table,advhr,advimage,advlink,emotions,iespell,inlinepopups,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template,advlist",
-
-			// Theme options
-			theme_advanced_buttons1 : "newdocument,|,bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,styleselect,formatselect,fontselect,fontsizeselect",
-			theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,|,insertdate,inserttime,preview,|,forecolor,backcolor",
-			theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,emotions,iespell,media,advhr,|,print,|,ltr,rtl,|,fullscreen",
-			
-			theme_advanced_toolbar_location : "top",
-			theme_advanced_toolbar_align : "left",
-			theme_advanced_resizing : true,
-
-			// Example content CSS (should be your site CSS)
-			content_css : "css/ebook.css",
-
-			// Drop lists for link/image/media/template dialogs
-			template_external_list_url : "lists/template_list.js",
-			external_link_list_url : "lists/link_list.js",
-			external_image_list_url : "lists/image_list.js",
-			media_external_list_url : "lists/media_list.js",
-
-			// Replace values for the template plugin
-			template_replace_values : {
-				username : "Some User",
-				staffid : "991234"
-			}
-		});
-		
-		
-	
-	
-	$("#search-basic").bind( "change", function(event, ui) {
+$("#search-basic").bind( "change", function(event, ui) {
      var searchinput = $("#search-basic").val();
 	 var inputtype = $("#inputtype").val();
-	 window.location = "?pub=store.cfm" + "&search=" + searchinput + "&type=" + inputtype ;
-	});
+	 window.location = "?pub=store.cfm" + "&search=" + searchinput + "&type=" + inputtype  ;
+	})
 	
-	//* Hide these for now by default.
-	//	$('#next_image').hide();
-	//	$('#previous_image').hide();
-	
-	//$('p').widont();
-	//$('h3').widont();
-	//$('h2').widont();
-	//$('h1').widont();
-	
-	//if (current_pub == 'addpub_list.cfm') {
-	//	var newColumnWidth = 904;
-	//	global_full_page = 1;
-	//	$('#scroller').css('-webkit-column-width', newColumnWidth);
-	//	$('#scroller').css('-moz-column-width', newColumnWidth);
-	//	$('#scroller').css('-ms-column-width', newColumnWidth);
-	//	$('#scroller').css('-o-column-width', newColumnWidth);
+$("#toc_button").bind('click',function(event, ui){
 		
-	//}
-	
-	
-	if ((current_pub == 'addpub.cfm') || (current_pub == 'addpub_list.cfm') || (current_pub == 'manpub.cfm') || (current_pub == 'manpro.cfm')) {
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		//$('#scrollcontainer').css('padding', '0 0 0 0');
-		//$('#scrollcontainer').css('margin', '0 0 0 0');
-	    $('#scrollcontainer').css('padding', '0 0 0 0');
-		$('#scrollcontainer').css('margin', '0 0 0 0');
-		
-	}
-	
-	if (current_pub == 'welcome.cfm') {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		$('#scrollcontainer').css('padding', '0 0 0 0');
-		$('#scrollcontainer').css('margin', '0 0 0 0');
-		//$('#scroller').css('background-color', 'black');
-		
-	}
-	
-	if (current_pub == 'buy.cfm') {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		//$('#scroller').css('background-color', 'black');
-		
-	}
-	
-		if (current_pub == 'store.cfm') {
-		global_full_page = 1;		
-		$('#scrollcontainer').css('padding', '0 0 0 0');
-		$('#scrollcontainer').css('margin', '0 0 0 0');
-		
-	}
-	
-		if ((current_pub == 'account.cfm') || (current_pub == 'permission.cfm') || (current_pub == 'sharing.cfm') || (current_pub == 'preferences.cfm')) {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		//newColumnGap = 0;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		//$('#scroller').css('-webkit-column-gap', newColumnGap);
-		//$('#scroller').css('-moz-column-gap', newColumnGap);
-		//$('#scroller').css('-ms-column-gap', newColumnGap);
-		//$('#scroller').css('-o-column-gap', newColumnGap);		
-		$('#scrollcontainer').css('padding', '0 0 0 0');
-		$('#scrollcontainer').css('margin', '0 0 0 0');	
-	}
-	
-	if (current_pub == 'welcome_video.cfm') {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		
-	}
-	
-	if (current_pub == 'nepal.cfm') {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		$('#scrollcontainer').css('padding', '0 0 0 0');
-		$('#scrollcontainer').css('margin', '0 0 0 0');
-		
-		
-	}	
-	
-	if ((current_pub == 'elearn-sailboat.cfm') || (current_pub == 'elearn2.cfm') || (current_pub == 'elearn1.cfm')) {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('column-width', newColumnWidth);
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		$('#scrollcontainer').css('padding', '0 60px 0 60px');
-		$('#scrollcontainer').css('margin', '0 0 0 0');
-		$('#scrollcontainer').css('background-color', 'DodgerBlue');
-		$('#scroller').css('background-color', 'DodgerBlue');	
-		$('#scroller').css('background-color', 'DodgerBlue');		
-		
-	}	
-	
-		if ((current_pub == 'solartimes.cfm')) {
-		var newPageHeight = 600;
-		$('#scroller').css('height', newPageHeight);
-		
-		
-	}
-		
-	
-	
-	if ((current_pub == 'help.cfm') || (current_pub == 'browserdownload.cfm')) {
-		//alert("we have a welcome?");
-		var newColumnWidth = 904;
-		global_full_page = 1;
-		$('#scroller').css('-webkit-column-width', newColumnWidth);
-		$('#scroller').css('-moz-column-width', newColumnWidth);
-		$('#scroller').css('-ms-column-width', newColumnWidth);
-		$('#scroller').css('-o-column-width', newColumnWidth);
-		$('#scrollcontainer').css('padding', '35px 60px 0 60px');
-		$('#scrollcontainer').css('margin', '0 0 0 0');		
-		
-	}		
-	
-//	$('#addpubform').submit(function(){
-		
-//		sendFormPub();
-//		hideLoadingIndicator();
-		
-		
-//	})
-	
-	        
-            $("#Submit").click(function(){
+		//alert("did we click on toc button?");	
+				last_page_read = global_page_num;
+				var tocShow = 'block';
+				$('#toc').css('display', 'block');
 				
-				
- 
-                var formData = $("#addpubform").serialize();
- 
-                $.ajax({
-                    type: "POST",
-                    url: "addpub_process.cfm",
-                    cache: false,
-                    data: formData,
-                    success: onSuccess,
-                    error: onError
-                });
- 
-                return false;
-            })
-       
-	
-	
-	
-	
-	
-   $('.swipecover').click(function(){
-     $('div.cover').hide();
-   })
-   
-   //$('a.showcover').click(function(){
-     //$('div.cover').show();
-  // })
-   
-   
-   //$('h1.swipecover').click(function(){
-	//$('div.cover').hide();
-   //})
-   
-	
-	
-//	$( '#configure').live( 'pageinit',function(event){
-	  //last_page_read = global_page_num;
-	  //alert("what is the last page read?" + last_page_read);
-//	  var current_cookie = 	parseInt($.cookie("bookmark"+current_pub));
-//	  $("#bookmark_page").text("Your bookmark/latest page read to is currently: "+ current_cookie);
-//	  $("#last_page_read").text("The last page you read: "+ global_page_num);
-//	})
+				gototoc(1);
+			
+		})		
 
-//	$( '#one').live( 'pageinit',function(event){
-//				   $('h1.swipecover').click(function(){
-//			 $('div.cover').hide();
-//			})
-//	})
-	
-	
-	$( '#config' ).live( 'pagebeforeshow',function(event){
-	  last_page_read = global_page_num;
-	  //alert("2what is the last page read?" + last_page_read);	  
-	  var current_cookie = 	parseInt($.cookie("bookmark"+current_pub));
-	  $("#bookmark_page").text("Your furthest page read to is currently: "+ current_cookie);
-	  $("#last_page_read").text("The last page you read: " + last_page_read);
-	  $("#global_page_num").text("The current page is: "+ global_page_num);
-	})	
-	
-	
-	
-	$("#bookmark_button").bind('click',function(event, ui){
-	//alert("scrolltop position is " + $("#scroller_portrait").position().top);	
-			
-			var port_top = $("#mainbody").scrollTop();
-			var p = $("#mainbody");
-			// $("#one").scrollTop(1300);
-			
-			//alert("scroller_portrait scroll top position " + port_top + "scroller port " + p.scrollTop());
-			//$("#mainbody").scrollTop(3000);
-		
-		
-		
-	//alert("set book mark to global page number " + global_page_num);	
-	resetbookmark(global_page_num);
-	last_page_read = global_page_num;
-	$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
-	//$("#bookmark_indicator").text(" ^");
-			//var x = $("#1").position().left;
-			//alert("what is the left position of section 2:" + x);	
-		
-	})
-	
-	$("#arrow_toolbar").bind('change',function(event, ui){
-		
-		var current_arrow_setting = $("#arrow_toolbar").val();
-		
-		if (current_arrow_setting == 'off') {
-	
-		$('#arrow_up_image').css('visibility', 'hidden');
-		
-		}
-		
-		if (current_arrow_setting == 'on') {
-			
-			$('#arrow_up_image').css('visibility', 'visible');
-			
-		}
-		
-	
-	})
-	
-	$("#hide_next_button").bind('click',function(event, ui){
-	
-	var stored_page_pref = $.cookie("page_pref"+current_pub);
-	if (stored_page_pref == "show") {	
-
-		
-		var bgcolor = 'white';
-		var font_color = 'black';
-		$.cookie("page_pref"+current_pub, "hide");
-		$('#next_image').hide();
-		$('#previous_image').hide();
-		$('#scroller').css('background-color', bgcolor);
-		$('#scrollcontainer').css('background-color', bgcolor);
-		$('#mainbody').css('background-color', bgcolor);
-		$('#mainfooter').css('background-color', bgcolor);
-		$('#maincenter').css('background-color', bgcolor);
-		$('#one').css('background-color', bgcolor);
-		$('body').css('background-color', bgcolor);
-		$('html').css('background-color', bgcolor);		
-		$('p').css('color', font_color);	
-	}
-	else
-	{
-		var bgcolor = 'black';
-		var font_color = 'white';
-
-		$.cookie("page_pref"+current_pub, "show");
-		$('#next_image').show();
-		$('#previous_image').show();	
-		$('#scroller').css('background-color', bgcolor);
-		$('#scrollcontainer').css('background-color', bgcolor);
-		$('#mainbody').css('background-color', bgcolor);
-		$('#mainfooter').css('background-color', bgcolor);
-		$('#maincenter').css('background-color', bgcolor);
-		$('#one').css('background-color', bgcolor);
-		$('body').css('background-color', bgcolor);
-		$('html').css('background-color', bgcolor);
-		$('p').css('color', font_color);		
-		
-	}
-	
-	})
-	
 	$("#font_size_increase_button").bind('click',function(event, ui){
 	var originalFontSize = $('p').css('font-size');
 	
@@ -468,19 +241,146 @@ $(document).ready(function() {
 
 	})	
 	
-	$("#toc_button").bind('click',function(event, ui){
+	$("#font_size_increase_button_a").bind('click',function(event, ui){
+	var originalFontSize = $('p').css('font-size');
+	
+    var currentFontSize = $('p').css('font-size');
+    var currentFontSizeNum = parseFloat(currentFontSize, 10);
+    var newFontSize = currentFontSizeNum*1.2;
+    $('p').css('font-size', newFontSize);
+	$('ol').css('font-size', newFontSize);
+	$('ul').css('font-size', newFontSize);
+	updatePageNum();
+    return false;
+	
+
+	})
+	
+	$("#font_size_decrease_button_a").bind('click',function(event, ui){
+	var originalFontSize = $('p').css('font-size');
+	
+    var currentFontSize = $('p').css('font-size');
+    var currentFontSizeNum = parseFloat(currentFontSize, 10);
+    var newFontSize = currentFontSizeNum*0.8;
+    $('p').css('font-size', newFontSize);
+	$('ol').css('font-size', newFontSize);
+	$('ul').css('font-size', newFontSize);
+	updatePageNum();
+    return false;
+	
+
+	})
+	
+	$('#night_mode_button').bind('click', function (event) {
+    event.preventDefault();
+    var theme = 'f';
+	var stored_night_mode = $.cookie("night_mode"+current_pub);
+	if (stored_night_mode == null) {
+	$.cookie("night_mode"+current_pub, "night", { expires: 512 });
+	}
+	if (stored_night_mode == "day") {
+		var theme = 'd';
+		$.cookie("night_mode"+current_pub, "night", { expires: 512 });
+	}
+	if (stored_night_mode == "night") {
+		var theme = 'f';
+		$.cookie("night_mode"+current_pub, "day", { expires: 512 });
+	}
 		
-		//alert("did we click on toc button?");	
-				last_page_read = global_page_num;
-				
-				gototoc(1);
+    $.mobile.activePage.find('.ui-btn')
+                       .removeClass('ui-btn-up-a ui-btn-up-b ui-btn-up-c ui-btn-up-d ui-btn-up-e ui-btn-hover-a ui-btn-hover-b ui-btn-hover-c ui-btn-hover-d ui-btn-hover-e')
+                       .addClass('ui-btn-up-' + theme)
+                       .attr('data-theme', theme);
+    $.mobile.activePage.find('.ui-header, .ui-footer')
+                       .removeClass('ui-bar-a ui-bar-b ui-bar-c ui-bar-d ui-bar-e')
+                       .addClass('ui-bar-' + theme)
+                       .attr('data-theme', theme);
+    $.mobile.activePage.removeClass('ui-body-a ui-body-b ui-body-c ui-body-d ui-body-e')
+                       .addClass('ui-body-' + theme)
+                       .attr('data-theme', theme);
+	})
+	
+	$('#columns_button').bind('click', function (event) {
+    event.preventDefault();
+    var columns = '-1';
+	var stored_columns = $.cookie("columns"+current_pub);
+	if (stored_columns == null) {
+	$.cookie("columns"+current_pub, "-1", { expires: 512 });
+	}
+	if (stored_columns == "yes") {
+		var columns = 'no';
+		$.cookie("columns"+current_pub, "no", { expires: 512 });
+	}
+	if ((stored_columns == "no") || (stored_columns == "-1")) {
+		var columns = 'yes';
+		$.cookie("columns"+current_pub, "yes", { expires: 512 });
+	}
+	var stored_columns = $.cookie("columns"+current_pub);
+	//alert("What is stored column value " + stored_columns);
+	if (stored_columns == 'yes') {
+		var newColumnWidth = 318;
+    	$('#scroller').css('column-width', newColumnWidth);
+		$('#scroller').css('-webkit-column-width', newColumnWidth);
+		$('#scroller').css('-moz-column-width', newColumnWidth);
+		$('#scroller').css('-ms-column-width', newColumnWidth);
+		$('#scroller').css('-o-column-width', newColumnWidth);
+		updatePageNum();	
+	}
+	if (stored_columns == 'no') {
+		var main_window_width = $(window).width();
+		var newColumnWidth = main_window_width;
+    	$('#scroller').css('column-width', newColumnWidth);
+		$('#scroller').css('-webkit-column-width', newColumnWidth);
+		$('#scroller').css('-moz-column-width', newColumnWidth);
+		$('#scroller').css('-ms-column-width', newColumnWidth);
+		$('#scroller').css('-o-column-width', newColumnWidth);
+		updatePageNum();
+		gotopage(global_page_num);	
+	}
+	})
+	
+	$(window).bind('orientationchange resize', function(event){
+      if(event.orientation) {
+            if(event.orientation == 'portrait') {
+				resesizewindows();
+	          } else if (event.orientation == 'landscape') {
+                       resesizewindows();
+                       } 
+            } else {
+                  // optional... PC-version javascript for example
+                  }
+
+      })
+	  
+  
+	  
+	$("#bookmark_button").bind('click',function(event, ui){
+	//alert("scrolltop position is " + $("#scroller_portrait").position().top);	
 			
-		})		
+			var port_top = $("#mainbody").scrollTop();
+			var p = $("#mainbody");
+			// $("#one").scrollTop(1300);
+			
+			//alert("scroller_portrait scroll top position " + port_top + "scroller port " + p.scrollTop());
+			//$("#mainbody").scrollTop(3000);
 		
-	
-	// This little IF statement make sure that left/right arrow buttons allow cursor to moved around edit on Publish page but are active when on normal published pages
-	if ($.mobile.activePage.attr('id') != 'publish') {
-	
+		
+		
+	//alert("set book mark to global page number " + global_page_num);	
+	resetbookmark(global_page_num);
+	last_page_read = global_page_num;
+	$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
+	//$("#bookmark_indicator").text(" ^");
+			//var x = $("#1").position().left;
+			//alert("what is the left position of section 2:" + x);	
+		
+	})  
+	  
+if ( current_action == 'edit') {
+//prevent left and right arrows	
+}
+else
+{
 	// left arrow key  on keyboard - go to the next page
 	$(document).keydown(function(e){
     if (e.keyCode == 39) { 
@@ -495,212 +395,487 @@ $(document).ready(function() {
        gotopreviouspage();
        return false;
     }
-	})
-	
-	}
-		
-
-
-
-    // A standard 'swipe' can be used to trigger event regardless of direction
-	// Start standard scrolling
-
-	$("#scroller").bind('scrollstart',function(event, ui){
-		//event.preventDefault();
-		start_px = $("#scroller").scrollLeft();
-	})
-	
-	
-    $("#scroller").bind('scrollstop',function(event, ui){
-		//event.preventDefault();
-		
-		stop_px = $("#scroller").scrollLeft();
-		// alert("scrolled prevent is set to " + just_scrolled_prevent);
-		// alert("This is how much it start and then stop: " + start_px + " end" + stop_px);
-		
-			// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-		var main_window = $('#scrollcontainer').width();
-		
-		// OLD WAY actual_page_window = main_window - hori_pad;
-		actual_page_window = main_window + global_gap;
-
-		
-		if (start_px < stop_px) {
-		// go to next page	
-		gotonextpage();
-	
-		} // end of if when going to next page
-
-		if (start_px > stop_px && global_page_num > 1) {
-			// go to previous page
-			gotopreviouspage();
-			} // end of if when going to previous page		
-    })		// end of scrolling landscape
-	
-	    // A standard 'swipe' for store navbar
-
-	$("#storenavbar").bind('touch',function(event, ui){
-		//event.preventDefault();
-		alert('hey touch');
-		
-		
-		
-	})
-	
-	
-$(window).bind('orientationchange resize', function(event){
-      if(event.orientation) {
-            if(event.orientation == 'portrait') {
-				if (current_pub != 'store.cfm') {
-				var main_window_width = $(window).width();
-				var adjust_portrait_width = main_window_width - 120;
-				$("#scrollcontainer").width(adjust_portrait_width);
-				$("#scroller").width("100%");
-				
-				}
-				
-		  resesizewindows();
-	          } else if (event.orientation == 'landscape') {
-                       resesizewindows();
-                       } 
-            } else {
-                  // optional... PC-version javascript for example
-                  }
-
-      });
-	
-	
-$("#slider-0").bind("vmouseup", function(event, ui){
-//	var slider_val = $("#scroller").scrollLeft();
-    //alert("yo");
-  });
-  
-
-  
-})	//----- end of jquery load page function?
-	
-
-function load() {
-	
-	resesizewindows();
-	getbookmarksetup();
-	updatePageNum();
-	gotopage(global_page_num);
-	$.mobile.hidePageLoadingMsg();
+	})	
 }
-
-function reload() {
 	
-	resesizewindows();
-	getbookmarksetup();
-	updatePageNum();
-	gotopage(global_page_num);
-	$.mobile.hidePageLoadingMsg();
-}
-
-function resesizewindows() {
+	
+	
+  //Scrolling handler	
+  
+scroll_option = $("#scroll_option").val();
+if (scroll_option == null) {
+	scroll_option="no"
+} 
+			if (scroll_option == 'no') {
+			$("#scrollcontainer").bind('scrollstart',function(event, ui){
+			//Key to preventing scroll up and down that caused pages to scroll left and right only part way
 				
-				var main_window_height = $(window).height();
-				var main_window_width = $(window).width();
-				if (main_window_height > main_window_width ) {
-					global_current_orientation = 0;				
-					
+				event.preventDefault();
+				
+			})
+			}
+
+	  		$("#scroller").bind('scrollstart',function(event, ui){
+			//event.preventDefault();
+			start_px = $("#scroller").scrollLeft();
+			})
+			
+	  
+	  		$("#scroller").bind('scrollstop',function(event, ui){
+			
+			stop_px = $("#scroller").scrollLeft();
+			
+			
+			//alert("top position " + start_px_top + "stop top " + stop_px_top);
+			
+			// alert("scrolled prevent is set to " + just_scrolled_prevent);
+			//alert("This is how much it start and then stop: " + start_px + " end" + stop_px + "start y " + start_px_y + "stop y " + stop_px_y);
+			
+				// OLD WAY - var main_window = $(window).width() - main_window_adjust;
+			var main_window = $('#scrollcontainer').width();
+			
+			// OLD WAY actual_page_window = main_window - hori_pad;
+			actual_page_window = main_window + global_gap;
+			
+			if (start_px < stop_px) {
+				// go to next page	
+				var abs_diff = stop_px - start_px;
+				//alert("moved left more than 100 pixels start_px: " + start_px + " stop px: " + stop_px + "abs diff " + abs_diff);
+				if (abs_diff >= 30) {
+				gotonextpage();
 				}
 				else
 				{
-					global_current_orientation = 1;
+				gotopage(global_page_num);	
 				}
-				// seems to be the key to starting natural getting top to work 
-				// REMOVING CHECK ON ORIENTATION - try to handle generically if (global_current_orientation == 0) {
-					
 				
-					var adjust_portrait_height = main_window_height - 70;
-					
-					//if ((current_pub != 'solartimes.cfm'))	{
-					$("#mainbody").height("100%");
-					$("#mainbody").width("100%");
-					$("#container").height("100%");
-					$("#container").width("100%");
-					$("#scroller").width("100%");	
-					$("#scroller").height(adjust_portrait_height);	
-					
-					//}	
-					//$("#scroller").height(adjust_main_landscape_height);
-				//}				
-				//if (global_current_orientation == 1) {
-					var adjust_landscape_height = main_window_height;//*** here is where we make full screen adjust_landscape_height = main_window_height - 74 NOTE 74 for bottom margine for footer ***//
-					
-					
-					
-					if (global_full_page == 1) {
-						
-						if (current_pub == 'store.cfm') {
-							//$("#scroller").height(adjust_landscape_height - 124);
-							$("#scroller").height(adjust_landscape_height - 344);
-							$("#scroller").width("100%");
-							
-						}
-						else if (current_pub == 'elearn-sailboat.cfm') {
-							//$("#scroller").height(adjust_landscape_height - 124);
-							
-							$("#scrollcontainer").height(adjust_landscape_height+70);
-							$("#scroller").width("100%");
-							
-						}
-						else if (current_pub == 'solartimes.cfm') {
-							//$("#scroller").height(adjust_landscape_height - 124);
-							
-							// $("#scroller").height(adjust_landscape_height);
-							// $("#scroller").width("100%");
-							
-						}
-						else if ((current_pub == 'addpub.cfm') || (current_pub == 'buy.cfm'))  {
-							//$("#scroller").height(adjust_landscape_height - 124);
-							
-							$("#scroller").height(adjust_landscape_height-70);
-							$("#scroller").width("100%");
-							
-						}
-						else
-						{
-							$("#scroller").height(adjust_landscape_height);
-							$("#scroller").width("100%");
-						}
-						
-					//}
-					//else
-					//{
-							// This one affects the store...add/subtract if store content changes.
-							$("#scroller").height(adjust_landscape_height - 100);
-							$("#scroller").width("100%");
-							
-					}
-					else
-					{
-						
-							$("#scroller").height(adjust_landscape_height - 70);
-							$("#scroller").width("100%");
-							
-						
-							
-	
-					}
-						
-					//}
-					
+		
+			} // end of if when going to next page
 			
+	
+			if (start_px > stop_px && global_page_num > 1) {
+				// go to previous page
+				var abs_diff = start_px - stop_px;
+				//alert("moved left more than 100 pixels start_px: " + start_px + " stop px: " + stop_px + "abs diff " + abs_diff);
+				if (abs_diff >= 50) {
+				gotopreviouspage();
+				}
+				else
+				{
+				gotopage(global_page_num);	
+				}
+			} // end of if when going to previous page	
+		
+	
+		
+			})		// end of scrolling landscape
+
+if (current_action != 'edit') {
+$('.ui-content a[href^=#]').bind('click vclick', function (ev) {
+	 	//alert("bookmark");
+		var thingy = $(this).attr('href');
+		var port_top = $(thingy).position().left;
+		//alert("location " + port_top);
+		var move_top_by = port_top;
+								
+		var container = move_top_by;
+									// OLD WAY - var main_window = $(window).width() - main_window_adjust;
+		var main_window = $('#scrollcontainer').width() + global_gap;
+		var pages_to_chapter = container/(main_window);
+		var pages_to_chapter_rounded = Math.floor(pages_to_chapter)+parseInt(global_page_num);
+											
+		var global_to_chapter = pages_to_chapter_rounded;												
 				
-$.mobile.hidePageLoadingMsg();
+		global_page_num = global_to_chapter;
+				//alert("global_page_num of chapter to go to" + global_page_num);
+				
+		//alert("goto page " + global_page_num);		
+		gotopage(global_page_num);
+        //location.hash = $(this).attr('href');
+		
+        return false;
+    })
+
+	
+}
+	
+$('a[href*="wikipedia"]').bind('click vclick', function (ev) {
+	 	//alert("bookmark");
+		var thingy = $(this).attr('title');
+		//alert("what is title? " + thingy);
+		window.location = "?pub=wikipedia.cfm" + "&title=" + thingy;
+		
+        return false;
+    })	
+	
+$('a[href*="species"]').bind('click vclick', function (ev) {
+	 	//alert("bookmark");
+		var thingy = $(this).attr('title');
+		//alert("what is title? " + thingy);
+		window.location = "?pub=wikispecies.cfm" + "&title=" + thingy;
+		
+        return false;
+    })		
+	
+$('a[href*="wikibooks"]').bind('click vclick', function (ev) {
+	 	//alert("bookmark");
+		var thingy = $(this).attr('title');
+		//alert("what is title? " + thingy);
+		window.location = "?pub=wikibooks.cfm" + "&title=" + thingy;
+		
+        return false;
+    })		
+
+$('a[href*="wikisource"]').bind('click vclick', function (ev) {
+	 	//alert("bookmark");
+		var thingy = $(this).attr('title');
+		//alert("what is title? " + thingy);
+		window.location = "?pub=wikisource.cfm" + "&title=" + thingy;
+		
+        return false;
+    })			
+
+
+$("a[data-ajax=false]").click(handleClick);
+	
+	function handleClick(e) {
+		var target = $(e.target).closest('a');
+		if( target ) {
+			e.preventDefault();
+			window.location = target.attr('href');
+		}
+	}	  
+	
+	$.mobile.hidePageLoadingMsg();
+			
+})
+
+
+
+$( '#pub' ).live( 'pagebeforecreate',function(event){
+	
+	
+//resesizewindows();
+//getbookmarksetup();
+//updatePageNum();
+})
+
+$( '#pub' ).live( 'pageloadfailed',function(event){
+				
+			//alert("Failed to load page properly. Sorry. Please try a different publications.");
+
+})
+
+$( '#pub' ).live( 'pageinit',function(event){
+	
+	
+
+
+	
+  //alert( 'This page was just enhanced by jQuery Mobile!' );
+
+})
+
+$( '#publish' ).live( 'pageinit',function(event){
+  //alert( 'Publish page initialized and then hide page loading message.' );
+  //$.mobile.hidePageLoadingMsg();	
+});	
+
+$('#publish').live('pageshow',function(event, ui){
+	
+	
+	
+
+  //$.mobile.hidePageLoadingMsg();		
+})
+
+  //alert( 'Pub page show and then hide load message.' );
+$( '#pub' ).live( 'pageinit',function(event){	
+
+});
+
+
+		
+
+
+function load() {
+	//Removed for now, could be used to allow user to enable this - hideAddressBar();
+	$.mobile.showPageLoadingMsg("b", "Loading and typesetting your publication. We'll have it on screen in just a second....", false);
+
+		
+	
+	resesizewindows();
+	getbookmarksetup();
+	updatePageNum();
+	gotopage(global_page_num);
+	if ($("#publish").is(".ui-page-active")) {
+		//do nothing
+		//alert("publish is active");
+	}
+	else
+	{
+	$("#slider-0").slider('refresh');
+	}
+		//update the popupSearchPanel if the windows are resized
+	$( "#popupSearchPanel" ).on({
+    popupbeforeposition: function() {
+        var h = $( window ).height();
+		h = h + 45;
+
+        $( "#popupSearchPanel" ).css( "height", h );
+    }
+	})
+	$.mobile.hidePageLoadingMsg();
+	try{
+		 
+			if ( current_hidetopbar == 'yes') {
+				//elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+				//setEndOfContenteditable(elem);
+				
+				$("[data-position='fixed']").fixedtoolbar('hide');
+				
+				//elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+				//alert("hey element " + elem);
+				//setEndOfContenteditable(elem);
+						
+			}	  
+	
+		}
+	catch(e){
+	 //catch and just suppress error
+	}
+	
+	if (current_action == 'Create') {
+	$.mobile.changePage('#publish', 'pop', true, true);	
+	}
+	
+	if (current_action == 'OpenLast') {
+	$.mobile.changePage('#OpenLast', 'pop', true, true);	
+	}
+	
+	//if ( current_hidetopbar == 'yes') {
+
+		elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+		//alert("hey element2 " + elem);
+		setEndOfContenteditable(elem);
+		elem.focus();	
+		$(elem).focusEnd();	
+		//$("[data-position='fixed']").fixedtoolbar('hide');
+	 //};
+	
+}
+
+function reload() {
+	//Removed for now, could be used to allow user to enable this - hideAddressBar();
+	resesizewindows();
+	getbookmarksetup();
+	updatePageNum();
+	gotopage(global_page_num);
+	if ($("#publish").is(".ui-page-active")) {
+		//do nothing
+		//alert("publish is active");
+	}
+	else
+	{
+	$("#slider-0").slider('refresh');	
+	}
+		//update the popupSearchPanel if the windows are resized
+	$( "#popupSearchPanel" ).on({
+    popupbeforeposition: function() {
+        var h = $( window ).height();
+		h = h + 45;
+
+        $( "#popupSearchPanel" ).css( "height", h );
+    }
+	})
+	$.mobile.hidePageLoadingMsg();
+	try{
+		 
+			if ( current_hidetopbar == 'yes') {
+				//elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+				//setEndOfContenteditable(elem);
+				$("[data-position='fixed']").fixedtoolbar('hide');
+				//elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+				//setEndOfContenteditable(elem);
+				//alert("hey element " + elem);						
+			}	  
+	
+		}
+	catch(e){
+	 //catch and just suppress error
+	}
+	
+	if (current_action == 'Create') {
+	$.mobile.changePage('#publish', 'pop', true, true);	
+	}
+	
+	if ( current_hidetopbar == 'yes') {
+
+		elem = document.getElementById('scroller');//This is the element that you want to move the caret to the end of
+		//alert("hey element3 " + elem);
+		setEndOfContenteditable(elem);
+		elem.focus();	
+		$(elem).focusEnd();	
+		//$("[data-position='fixed']").fixedtoolbar('hide');
+	 };
+	
+
+}
+
+  
+function hideAddressBar()
+{
+  if(!window.location.hash)
+  {
+      if(document.height < window.outerHeight)
+      {
+          document.body.style.height = (window.outerHeight + 50) + 'px';
+      }
+
+      setTimeout( function(){ window.scrollTo(0, 1); }, 50 );
+  }
+}
+
+window.addEventListener("load", function(){ if(!window.pageYOffset){ hideAddressBar(); } } );
+window.addEventListener("orientationchange", hideAddressBar );
+	  
+
+
+
+function resesizewindows() {
+	
+var page_height = $("#page_height").val();
+var margin_top = $("#margin_top").val();	
+var margin_bottom = $("#margin_bottom").val();
+var margin_left = $("#margin_left").val();	
+var margin_right = $("#margin_right").val();
+var columns = $("#columns").val();
+var main_window_height = $(window).height();
+var main_window_width = $(window).width();
+var newColumnWidth = main_window_width;
+if ((columns != "-1") && (columns == "no")) {
+		$('#scroller').css('column-width', newColumnWidth);
+		$('#scroller').css('-webkit-column-width', newColumnWidth);
+		$('#scroller').css('-moz-column-width', newColumnWidth);
+		$('#scroller').css('-ms-column-width', newColumnWidth);
+		$('#scroller').css('-o-column-width', newColumnWidth);	
+	
+}
+
+	var new_scrollcontainer_height = main_window_height - 80;
+	if ((page_height != "-1") || (page_height != "")) {
+		
+		
+		
+		$("#scrollcontainer").height(new_scrollcontainer_height);
+		
+		
+	
+	}
+	else
+	{
+			var new_scrollcontainer_height = page_height - 80;
+			$("#scrollcontainer").height(new_scrollcontainer_height);
+	}
+
+
+	var actual_new_height = main_window_height;
+	if (margin_top != "-1") {
+		if (page_height == "-1") {
+			actual_new_height = actual_new_height - margin_top;	
+			$("#scrollcontainer").css('margin-top',margin_top+'px');
+		}
+		else
+		{
+			var new_scrollcontainer_height = page_height - margin_top;
+			$("#scrollcontainer").css('margin-top',margin_top+'px');
+			$("#scrollcontainer").height(new_scrollcontainer_height);
+			
+		}
+	}
+	if (margin_bottom != "-1") {
+		if (page_height == "-1") {
+			actual_new_height = actual_new_height - margin_bottom;	
+			$("#scrollcontainer").css('margin-bottom',margin_top+'px');
+		}
+		else
+		{
+			var new_scrollcontainer_height = page_height - margin_bottom;
+			$("#scrollcontainer").height(new_scrollcontainer_height);
+		}
+	}
+	if (margin_left != "-1") {
+	$("#scrollcontainer").css('margin-left',margin_left+'px');
+	}
+	if (margin_right != "-1") {
+	$("#scrollcontainer").css('margin-right',margin_right+'px');
+	}
+	
+	if ((margin_top != "-1") || (margin_bottom != "-1")) {
+		if (page_height == "-1") {
+			$("#scrollcontainer").height(actual_new_height);
+		}
+		else
+		{
+			var new_scrollcontainer_height = page_height;
+			$("#scrollcontainer").height(new_scrollcontainer_height);
+		}
+	}
+	else
+	{
+		if (page_height == "-1") {
+			$("#scrollcontainer").height(main_window_height);	
+		}
+		else
+		{
+			var new_scrollcontainer_height = page_height;
+			$("#scrollcontainer").height(new_scrollcontainer_height);
+		}
+	}
+	
+	//update the popupSearchPanel if the windows are resized
+	$( "#popupSearchPanel" ).on({
+    popupbeforeposition: function() {
+        var h = $( window ).height();
+		h = h + 45;
+
+        $( "#popupSearchPanel" ).css( "height", h );
+    }
+	})
+
+	
 	
 }
 
 function getbookmarksetup() {
-	var stored_bookmark = $.cookie("bookmark"+current_pub);
+	var stored_last_pub = $.cookie("stored_last_pub");
+	var stored_last_pub_ipub = $.cookie("stored_last_pub_ipub");
+	if (stored_last_pub == null) {
+		$.cookie("stored_last_pub", current_pub, { expires: 512 });
+	}
+	else
+	{
+		$.cookie("stored_last_pub", current_pub, { expires: 512 });	
+	}
+	if (stored_last_pub_ipub == null) {
+		$.cookie("stored_last_pub_ipub", current_ipub, { expires: 512 });
+	}
+	else
+	{
+		$.cookie("stored_last_pub_ipub", current_ipub, { expires: 512 });
+	}
+	
+	var bookmarkname = "bookmark" + current_pub;	
+	var stored_bookmark = $.cookie("bookmark" + current_pub);
+	//alert("current pub " + current_pub);
+	//alert("cookie value " + stored_bookmark);
+	//alert("emma value " + $.cookie("bookmarkmother_earth_emma_goldman.html"));
+	//alert("page nume " + current_bookmark);
 	if (stored_bookmark == null) {
-	$.cookie("bookmark"+current_pub, "1", { expires: 512 });
-	$.cookie("current_bookmark", "1", { expires: 512 });
+	$.cookie("bookmark"+current_pub, 1, { expires: 512 });
+	$.cookie("current_bookmark", 1, { expires: 512 });
 	$.cookie("page_pref"+current_pub, "show_true", { expires: 512 });
-	// alert( "Null bookmark, so set it to 1" + $.cookie("bookmark") );
+	 //alert( "Null bookmark, so set it to 1" + $.cookie("bookmark") + " bookmarkname " + bookmarkname);
 	}
 	else
 	{
@@ -709,139 +884,65 @@ function getbookmarksetup() {
 		$('#next_image').hide();
 		$('#previous_image').hide();
 		}
-		global_page_num = parseInt($.cookie("bookmark"+current_pub));
-
-	}	
+		if ((current_pub != 'wikipedia.cfm') || (current_pub != 'wikibooks.cfm') || (current_pub != 'wikisource.cfm') || (current_pub != 'wikispecies.cfm'))  {
+			
+		global_page_num = stored_bookmark;
+		//alert("global page num set"+global_page_num);
+		//alert("current bookmark " + current_bookmark);
+		//alert("stored bookmark " + stored_bookmark);
+		//alert("current bookmark " + stored_bookmark);
+		//alert("bookmark " + bookmark);
+		}
+		else
+		{
+			//when doing wiki work to when new topics are selected it goes to the first page.
+			global_page_num = 1;
+		}
+	}
+	if (global_page_num	== null) {
+	if ((current_pub != 'wikipedia.cfm') || (current_pub != 'wikibooks.cfm') || (current_pub != 'wikisource.cfm')  || (current_pub != 'wikispecies.cfm'))  {	
+	
+	global_page_num = parseInt($.cookie(bookmarkname));
+	}
+	else
+	{
+	
+	global_page_num = 1;
+	}
+	}
+	if ((current_pub == 'wikipedia.cfm'))  {
+	global_page_num = 1;
+	}
+		
 }
 
 function updatePageNum() {
 	
+	
 	var container = document.getElementById('scroller').scrollWidth;
-	var actual_main_window = $(window).width() - main_window_adjust;
-	var main_window_height = $(window).height();
+	var actual_window = $(window).width();
+	var actual_window_height = $(window).height();
 	var column_width = $('#scroller').css('-webkit-column-width');
 	var column_gap = $('#scroller').css('-webkit-column-gap');
-
-
-	if (global_full_page == 0) {			
-			if (actual_main_window >= 1600) { // this would be when three columns appear
-				
-					var newGapWidth = 30;
-					var newColumnWidth = 317;
-					var newScrollContainer = 1320;
-					//var newScrollContainer = 1440;
-					$('#scrollcontainer').css('width', newScrollContainer);
-					$('#scroller').css('-webkit-column-gap', newGapWidth);
-					$('#scroller').css('-webkit-column-width', newColumnWidth);
-					$('#scroller').css('-ms-column-gap', newGapWidth);
-					$('#scroller').css('-ms-column-width', newColumnWidth);	
-					$('#scroller').css('-moz-column-gap', newGapWidth);
-					$('#scroller').css('-moz-column-width', newColumnWidth);										
-					//$('#scrollcontainer').css('width', newScrollContainer);
-					
-				}
-			else if (actual_main_window >= 1440) { // this would be when three columns appear
-				
-					var newGapWidth = 30;
-					var newColumnWidth = 317;
-					var newScrollContainer = 1320;
-					//var newScrollContainer = 1440;
-					$('#scrollcontainer').css('width', newScrollContainer);
-					$('#scroller').css('-webkit-column-gap', newGapWidth);
-					$('#scroller').css('-webkit-column-width', newColumnWidth);
-					$('#scroller').css('-moz-column-gap', newGapWidth);
-					$('#scroller').css('-moz-column-width', newColumnWidth);	
-					$('#scroller').css('-ms-column-gap', newGapWidth);
-					$('#scroller').css('-ms-column-width', newColumnWidth);									
-					//$('#scrollcontainer').css('width', newScrollContainer);
-					
-				}
-			else if (actual_main_window >= 1280) { // this would be when three columns appear
-				
-					var newGapWidth = 30;
-					var newColumnWidth = 318;
-					var newScrollContainer = 1164;
-					//var newScrollContainer = 1440;
-					$('#scrollcontainer').css('width', newScrollContainer);
-					$('#scroller').css('-webkit-column-gap', newGapWidth);
-					$('#scroller').css('-webkit-column-width', newColumnWidth);
-					$('#scroller').css('-moz-column-gap', newGapWidth);
-					$('#scroller').css('-moz-column-width', newColumnWidth);	
-					$('#scroller').css('-ms-column-gap', newGapWidth);
-					$('#scroller').css('-ms-column-width', newColumnWidth);					
-					//$('#scrollcontainer').css('width', newScrollContainer);
-					
-				}
-				
-			else if (actual_main_window >= 1024) { // this would be when three columns appear
-				
-					var newGapWidth = 30;
-					var newColumnWidth = 318;
-					var newScrollContainer = 904;
-					//var newScrollContainer = 1440;
-					$('#scrollcontainer').css('width', newScrollContainer);
-					$('#scroller').css('-webkit-column-gap', newGapWidth);
-					$('#scroller').css('-webkit-column-width', newColumnWidth);
-					$('#scroller').css('-moz-column-gap', newGapWidth);
-					$('#scroller').css('-moz-column-width', newColumnWidth);	
-					$('#scroller').css('-ms-column-gap', newGapWidth);
-					$('#scroller').css('-ms-column-width', newColumnWidth);					
-					//$('#scrollcontainer').css('width', newScrollContainer);
-					
-				}
-				
-			else if (actual_main_window <= 480) { // this would be when three columns appear
-				
-					var newGapWidth = 20;
-					var newColumnWidth = 300;
-					var newScrollContainer = 320;
-					//var newScrollContainer = 1440;
-					$('#scrollcontainer').css('width', newScrollContainer);
-					$('#scroller').css('-webkit-column-gap', newGapWidth);
-					$('#scroller').css('-webkit-column-width', newColumnWidth);
-					$('#scroller').css('-moz-column-gap', newGapWidth);
-					$('#scroller').css('-moz-column-width', newColumnWidth);	
-					$('#scroller').css('-ms-column-gap', newGapWidth);
-					$('#scroller').css('-ms-column-width', newColumnWidth);					
-					//$('#scrollcontainer').css('width', newScrollContainer);
-					
-				}								
-				
-	} // end of check for full page 0 which means false, if it is the width is set 904, full page
-						
-
-		
-	 
+	var main_window = $('#scrollcontainer').width();	
 	
-	
-	var container = document.getElementById('scroller').scrollWidth;
-	// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-	var actual_window = $(window).width() - main_window_adjust;
-	var main_window = $('#scrollcontainer').width();
-	var main_window_height = $(window).height();
-	var column_width = parseInt($('#scroller').css('-webkit-column-width'));
-	var column_gap = parseInt($('#scroller').css('-webkit-column-gap'));	
 	// DON'T NEED TO SUBTRACT MARGINS? var page_width = main_window - 120;
 	var page_width = main_window;
 	var number_of_columns = (page_width + column_gap)/(column_width + column_gap);
 	
-  // TOOL FOR SEEING SIZES of things: $("#position").text("sw: " + container + " mw: " + main_window + " cw: " + column_width + " cg: " + column_gap + " cols: " + number_of_columns + " aw: " + actual_window); 
+	//$("#position").text("sw: " + container + " mw: " + main_window + " cw: " + column_width + " cg: " + column_gap + " cols: " + number_of_columns + " aw: " + actual_window); 
 
 
-	var container = document.getElementById('scroller').scrollWidth;
 	// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-	var main_window = $('#scrollcontainer').width() + global_gap;
 	var pages_total = container/(main_window);
 	var pages_rounded = Math.floor(pages_total)+1;			
-	global_total_page_landscape = pages_rounded;
+	global_total_page = pages_rounded;
 	// Change to generic: if (global_current_orientation == 1) {
-		showPageNum("",  global_total_page_landscape, global_page_num + " of ");
-	//}
-	//else
-	//{
-		//showPageNum("- end -",  "", "");
-	//}
+	showPageNum("",  global_total_page, global_page_num + " of ");
+	resesizewindows();
+	
 }
+
 
 function showPageNum(ele, total, current) {
 	
@@ -852,70 +953,42 @@ function showPageNum(ele, total, current) {
   var display_page_percent = page_percent.toPrecision(3);
   var slider_value = page_percent;
   $("#page_percent").text(display_page_percent + "%");
+  //alert("page percent " + slider_value);
+  
   $("#slider-0").val(slider_value);
-  $("#slider-0").slider('refresh');
-
+	if ($("#publish").is(".ui-page-active")) {
+		//do nothing
+		//alert("publish is active");
+	}
+	else
+	{
+	$("#slider-0").slider('refresh');	
+	}
+  
 }
 
-// Go to a page
+function showDeviceInfo(global_pages, device_width, device_height) {	
+  $("#device_pages").text("Pages: " + global_pages);
+  $("#device_width").text("Page Width: " + device_width + "px");
+  $("#device_height").text("Page Height: " + device_height + "px");
+}
 
 function gotopage(page_to) { //v3.0
-
-
-
-				//if ( global_current_orientation == 0) {
-								//var port_top = $("#mainbody").scrollTop();
-								//var main_window_width = $(window).width() - 80;
-								//var main_window_height = $(window).height() - hori_pad; // oritentation is port, so horizontal pad is the reference. width 904 on ipad, height is 688 when no safari tabs, 598 with safari tabs - .6615
-								//var proportion_multiplier = main_window_width/main_window_height;
-								//var move_top_by = page*1064*proportion_multiplier;
-								
-								//alert("we should have scrolled down" + move_top_by + "port top val:" + port_top);
-								//$('div.cover').hide();
-// doesn't seem to work								$("[data-position='fixed']").fixedtoolbar('hide');
-// doesn't seem to work								$("[data-position='fixed']").fixedtoolbar('updatePagePadding');
-								//$("#mainbody").scrollTop(move_top_by);
-								
-								
-												
-					
-					
-								//showWidth("All Pages",  "", "");						
-
-	
-				//}
-									
-				
-
-				//if ( global_current_orientation == 1) {
-					// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-				var main_window = $('#scrollcontainer').width();
-				// OLD WAY var actual_page_window = main_window - hori_pad;
-				var actual_page_window = main_window + global_gap;
-				
-				
-				
+				var actual_window_height = $('#scrollcontainer').height();
+				var actual_page_window = main_window ;			
 				var container = document.getElementById('scroller').scrollWidth;
-					// OLD WAY - var main_window = $(window).width() - main_window_adjust;
 				var main_window = $('#scrollcontainer').width() + global_gap;
 				var pages_total = container/(main_window);
 				var pages_rounded = Math.floor(pages_total)+1;			
-				global_total_page_landscape = pages_rounded;
+				global_total_page = pages_rounded;
+				//alert("what is page to as global is being set to that "+global_total_page_landscape);
 				global_page_num = page_to;
-				var left_scroll_position = $("#scroller").scrollLeft();
-
-				//alert("What page number are we going to? " + global_page_num + "page passed in " + page_to + "What position is scroller at?" + left_scroll_position);
-				
-				//$('div.cover').hide();
-				
-	
-				$("#scroller").scrollLeft((page_to-1)*(actual_page_window));	
-				
-				
-				
-				$.cookie("bookmark"+current_pub, page_to);
-				$.cookie("current_bookmark", page_to);
-				showPageNum("",  global_total_page_landscape, page_to + " of ");	
+				var left_scroll_position = $("#scroller").scrollLeft();	
+				scroll_landscape(global_page_num);
+				//$("#scroller").scrollLeft((page_to-1)*(actual_page_window));	
+				$.cookie("bookmark"+current_pub, page_to, { expires: 512 });
+				$.cookie("current_bookmark", page_to, { expires: 512 });
+				showPageNum("",  global_total_page, page_to + " of ");	
 								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
 								if (current_bookmark_val == global_page_num) {	
 									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
@@ -929,86 +1002,28 @@ function gotopage(page_to) { //v3.0
 				//}
 								
 
+				showDeviceInfo(global_total_page, main_window, actual_window_height);
 				
+				
+				
+
+	
 					
 	
 }
 
-// TOC stuff
-function gototoc(page){ //v3.0
-
-				
-
-
-
-				//if ( global_current_orientation == 0) {
-					//			var port_top = $("#toc").offset().top;
-						//		var move_top_by = port_top - 60;
+function gotonextpage() {
+		
+							
+				if (global_page_num < global_total_page) {			
+				var from_page = parseInt(global_page_num);
+				var to_page = parseInt(global_page_num) + 1;
+				global_page_num = parseInt(global_page_num) + 1;
 								
-								//alert("we should have scrolled down" + move_top_by + "port top val:" + port_top);
-							//	$("#mainbody").scrollTop(move_top_by);
-								
-												
-					
-					
-								//showWidth("All Pages",  global_total_page_portrait, global_page_num);						
-
-	
-				//}
-									
-				
-
-				//if ( global_current_orientation == 1) {
-					// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-				var main_window = $('#scrollcontainer').width();
-				// actual_page_window = main_window - hori_pad;
-				actual_page_window = main_window + global_gap;
-				//alert("do we get into the goto toc function?");
-								var port_top = $("#toc").position().left;
-								//alert("What is port top when no toc? " + port_top);
-								var move_top_by = port_top;
-								var toc_page = move_top_by/(actual_page_window);
-								var toc_page_rounded = Math.floor(toc_page)+1;
-												
-				// *** We are putting the TOC on page 1 always for now...eventually find it.
-				// *** por_top offset position is a negative number relative to current scroll...so
-				// *** need to figure out how to move to that position.
-				global_page_num = 1;
-										if ((current_pub == 'solvil1.cfm') || (current_pub == 'solvil2.cfm') || (current_pub == 'solvil3.cfm') || (current_pub == 'solvil4.cfm') || (current_pub == 'solvil5.cfm')) {
-						
-						window.location = "?pub=solvil.cfm";
-						
-					}			
-					if ((current_pub == 'solworld1.cfm') || (current_pub == 'solworld2.cfm') || (current_pub == 'solworld3.cfm')) {
-						
-						window.location = "?pub=solarworld.cfm";
-						
-					}	
-					
-					if ((current_pub == '100percent_re1.html') || (current_pub == '100percent_re2.html') || (current_pub == '100percent_re3.html')) {
-						
-						window.location = "?pub=100percent_re.html";
-						
-					}	
-					
-					if ((current_pub == 'SunRise1.cfm') || (current_pub == 'SunRise2.cfm') || (current_pub == 'SunRise3.cfm')) {
-						
-						window.location = "?pub=SunRise.htm";
-						
-					}				
-						
-				// we aren't setting last page read to 1 at this point in theory it is the one before they came to toc
-				if (move_top_by < 0) {
-
-				$("#scroller").scrollLeft(move_top_by);
-				
-								container = document.getElementById('scroller').scrollWidth;
-									// OLD WAY - var main_window = $(window).width() - main_window_adjust;
-								var main_window = $('#scrollcontainer').width() + global_gap;
-								pages_total = container/(main_window);
-								pages_rounded = Math.floor(pages_total)+1;			
-								global_total_page_landscape = pages_rounded;
-								showPageNum("",  global_total_page_landscape, global_page_num + " of ");
+								showPageNum("",  global_total_page, global_page_num + " of ");	
+								$.cookie("bookmark"+current_pub, parseInt(global_page_num), { expires: 512 });
+								$.cookie("current_bookmark", parseInt(global_page_num), { expires: 512 });
+								UpdateBookmark(global_page_num);
 								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
 								if (current_bookmark_val == global_page_num) {	
 									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
@@ -1018,20 +1033,115 @@ function gototoc(page){ //v3.0
 									$("#bookmark_image").attr("src","images/bookmark_black_trans.png");
 								}
 								
+								scroll_landscape(global_page_num);
+								
+				} // end of check on at end of publication
+				else
+				{
+					//alert("You've reached the end of this publication.");
+				}
+									
+}
+
+function gotopreviouspage() {
+				// go to the previous page
+			// alert("This is if start less than stop");
+			//if (just_animated == 0) {
+							// alert("just animated is 0");
+				if (global_page_num > 1) {			
+				var from_page = global_page_num;
+				var to_page = global_page_num - 1;
+				global_page_num = global_page_num - 1;
+				
+				
+							
+				// alert("global_page_num " + global_page_num);								
+
+								showPageNum("",  global_total_page, global_page_num + " of ");
+								UpdateBookmark(global_page_num);
+								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
+								if (current_bookmark_val == global_page_num) {	
+									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
+								}
+								else
+								{
+									$("#bookmark_image").attr("src","images/bookmark_black_trans.png");
+								}
+								
+								scroll_landscape(global_page_num);
+								
+				} // end of if on whether at start of document
+
+			}
+			
+function scroll_landscape(page) {
+	
+
+				actual_page_window = $('#scrollcontainer').width() + global_gap;
+				//alert("actual page window " + actual_page_window);
+				$("#scroller").scrollLeft((global_page_num-1)*actual_page_window);
+				
+				//$("#scroller").animate({scrollLeft:(global_page_num-1)*actual_page_window},'slow');
+				
+				//$("#scroller").animate({ scrollLeft: ((global_page_num-1)*actual_page_window) },1500,'easeInOutExpo');
+								container = document.getElementById('scroller').scrollWidth;
+									// OLD WAY - var main_window = $(window).width() - main_window_adjust;
+								var main_window = $('#scrollcontainer').width() + global_gap;
+								pages_total = container/(actual_page_window);
+								pages_rounded = Math.floor(pages_total)+1;			
+								global_total_page = pages_rounded;
+								showPageNum("",  global_total_page, global_page_num + " of ");
+								global_position_percent = global_page_num/global_total_page;
+								//event.preventDefault();
+											
+				//$("#scroller_landscape").stop();
+			
+				
+
+}
+
+// bookmark handling
+
+function resetbookmark(reset_page) {
+			//alert("Reset bookmark to the following" + reset_page);
+			
+			$.cookie("bookmark"+current_pub, parseInt(reset_page), { expires: 512 });
+			$.cookie("current_bookmark", parseInt(reset_page), { expires: 512 });
+				global_page_num = reset_page;
+				UpdateBookmark(global_page_num);
+				gotopage(reset_page);
+
+				
+
+}
+
+function gotobookmarkpage() {
+				
+				$('#config.ui-dialog').dialog('close');
+				bookmark = parseInt($.cookie("bookmark"+current_pub));
+
+				//alert("Should be trying to go to current book mark at page... " + global_page_num + "current bookmark"+ bookmark);
+				global_page_num = parseInt($.cookie("bookmark"+current_pub));
+				
+				gotopage(global_page_num);
+}
+
+function gotolastpageread() {
+				if ((current_pub != 'wikipedia.cfm') || (current_pub != 'wikibooks.cfm')  || (current_pub != 'wikisource.cfm')  || (current_pub != 'wikisecies.cfm'))  {	
+				gotopage(last_page_read);
 				}
 				else
 				{
-
-					
+				last_page_read = 1;	
+				gotopage(1);	
 				}
-								
-								
-				//}
-								
+}
 
-				
-					
-	
+function UpdateBookmark(obj){
+	$.post('updatebookmark.cfm',$("#pageform").serialize(),function(data,obj){
+		$("#result").html(data)
+	});
+	return false
 }
 
 // Go to Chapters in Table of Contents #toc element in the publicaiton text
@@ -1122,174 +1232,107 @@ function gototocchapter(chapter) {
 			//} // end of if landscape orientation
 }
 
-
-// go to next page
-
-function gotonextpage() {
-
-			// alert("This is if start less than stop");
-			//if (just_animated == 0) {
-							// alert("just animated is 0");
-							
-				if (global_page_num < global_total_page_landscape) {			
-				var from_page = global_page_num;
-				var to_page = global_page_num + 1;
-				global_page_num = global_page_num + 1;
-				
-							
-				// alert("global_page_num " + global_page_num);								
-
-	
+// TOC stuff
+function gototoc(page){ //v3.0
+var thingy = $('#toc').position().left;
+//alert("toc position " + thingy);
+var port_top = thingy;
+var move_top_by = port_top;
 								
-								showPageNum("",  global_total_page_landscape, global_page_num + " of ");	
-								$.cookie("bookmark"+current_pub, global_page_num);
-								$.cookie("current_bookmark", global_page_num);
-								UpdateBookmark(global_page_num);
-								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
-								if (current_bookmark_val == global_page_num) {	
-									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
-								}
-								else
-								{
-									$("#bookmark_image").attr("src","images/bookmark_black_trans.png");
-								}
-								
-								scroll_landscape(global_page_num);
-								
-				} // end of check on at end of publication
-									
-}
+		var container = move_top_by;
+									// OLD WAY - var main_window = $(window).width() - main_window_adjust;
+		var main_window = $('#scrollcontainer').width() + global_gap;
+		var pages_to_chapter = container/(main_window);
+		var pages_to_chapter_rounded = Math.floor(pages_to_chapter)+parseInt(global_page_num);
+											
+		var global_to_chapter = pages_to_chapter_rounded;												
+				
+		global_page_num = global_to_chapter;
+				//alert("global_page_num of chapter to go to" + global_page_num);
+				
+		//alert("goto page " + global_page_num);		
+		gotopage(global_page_num);
+				var main_window = $('#scrollcontainer').width();
+				// actual_page_window = main_window - hori_pad;
+				actual_page_window = main_window + global_gap;
+				//alert("do we get into the goto toc function?");
+								var port_top = $("#toc").position().left;
+								//alert("What is port top when no toc? " + port_top);
+								var move_top_by = port_top;
+								var toc_page = move_top_by/(actual_page_window);
+								var toc_page_rounded = Math.floor(toc_page)+1;
+												
+				// *** We are putting the TOC on page 1 always for now...eventually find it.
+				// *** por_top offset position is a negative number relative to current scroll...so
+				// *** need to figure out how to move to that position.
+				//global_page_num = 1;
+				if ((current_pub == 'solvil1.cfm') || (current_pub == 'solvil2.cfm') || (current_pub == 'solvil3.cfm') || (current_pub == 'solvil4.cfm') || (current_pub == 'solvil5.cfm')) {
+						
+						window.location = "?pub=solvil.cfm";
+						
+					}			
+					if ((current_pub == 'solworld1.cfm') || (current_pub == 'solworld2.cfm') || (current_pub == 'solworld3.cfm')) {
+						
+						window.location = "?pub=solarworld.cfm";
+						
+					}	
+					
+					if ((current_pub == '100percent_re1.html') || (current_pub == '100percent_re2.html') || (current_pub == '100percent_re3.html')) {
+						
+						window.location = "?pub=100percent_re.html";
+						
+					}	
+					
+					if ((current_pub == 'SunRise1.cfm') || (current_pub == 'SunRise2.cfm') || (current_pub == 'SunRise3.cfm')) {
+						
+						window.location = "?pub=SunRise.htm";
+						
+					}				
+						
+				// we aren't setting last page read to 1 at this point in theory it is the one before they came to toc
+				if (move_top_by < 0) {
 
-function gotopreviouspage() {
-				// go to the previous page
-			// alert("This is if start less than stop");
-			//if (just_animated == 0) {
-							// alert("just animated is 0");
-				if (global_page_num > 1) {			
-				var from_page = global_page_num;
-				var to_page = global_page_num - 1;
-				global_page_num = global_page_num - 1;
+				$("#scroller").scrollLeft(move_top_by);
 				
-				
-							
-				// alert("global_page_num " + global_page_num);								
-
-								showPageNum("",  global_total_page_landscape, global_page_num + " of ");
-								UpdateBookmark(global_page_num);
-								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
-								if (current_bookmark_val == global_page_num) {	
-									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
-								}
-								else
-								{
-									$("#bookmark_image").attr("src","images/bookmark_black_trans.png");
-								}
-								
-								scroll_landscape(global_page_num);
-								
-				} // end of if on whether at start of document
-
-			}
-			
-function scroll_landscape(page) {
-				actual_page_window = $('#scrollcontainer').width() + global_gap;
-				//alert("actual page window " + actual_page_window);
-				$("#scroller").scrollLeft((global_page_num-1)*actual_page_window);
-				
-				//$("#scroller").animate({scrollLeft:(global_page_num-1)*actual_page_window},'slow');
-				
-				//$("#scroller").animate({ scrollLeft: ((global_page_num-1)*actual_page_window) },1500,'easeInOutExpo');
 								container = document.getElementById('scroller').scrollWidth;
 									// OLD WAY - var main_window = $(window).width() - main_window_adjust;
 								var main_window = $('#scrollcontainer').width() + global_gap;
-								pages_total = container/(actual_page_window);
+								pages_total = container/(main_window);
 								pages_rounded = Math.floor(pages_total)+1;			
-								global_total_page_landscape = pages_rounded;
-								showPageNum("",  global_total_page_landscape, global_page_num + " of ");
-								global_position_percent = global_page_num/global_total_page_landscape;
-								//event.preventDefault();
-											
-				//$("#scroller_landscape").stop();
-			
+								global_total_page = pages_rounded;
+								showPageNum("",  global_total_page, global_page_num + " of ");
+								var current_bookmark_val = parseInt($.cookie("bookmark"+current_pub));
+								if (current_bookmark_val == global_page_num) {	
+									$("#bookmark_image").attr("src","images/bookmark_red_trans.png");
+								}
+								else
+								{
+									$("#bookmark_image").attr("src","images/bookmark_black_trans.png");
+								}
+								
+				}
+				else
+				{
+
+					
+				}
+								
+								
+				//}
+								
+
 				
-
-}
-
-// bookmark handling
-
-function resetbookmark(reset_page) {
-			//alert("Reset bookmark to the following" + reset_page);
-			
-			$.cookie("bookmark"+current_pub, reset_page);
-			$.cookie("current_bookmark", reset_page);
-				global_page_num = reset_page;
-				UpdateBookmark(global_page_num);
-				gotopage(reset_page);
-
-				
-
-}
-
-function gotobookmarkpage() {
-				
-				$('#config.ui-dialog').dialog('close');
-				bookmark = parseInt($.cookie("bookmark"+current_pub));
-
-				//alert("Should be trying to go to current book mark at page... " + global_page_num + "current bookmark"+ bookmark);
-				global_page_num = parseInt($.cookie("bookmark"+current_pub));
-				
-				gotopage(global_page_num);
-}
-
-function gotolastpageread() {
-				
-				gotopage(last_page_read);
-}
-
-// Some data functions
-
-        function onSuccess(data, status)
-        {	
-			//alert("success?");
-            data = $.trim(data);
-            $("#result1").text(data);
-        }
- 
-        function onError(data, status)
-        {
-           // alert("error?");
-        }  
-
-
-
-function hideLoadingIndicator(){
-        // this.base();
-        $.mobile.pageLoading(true);
-		}
-
-//Some utility functions
-
-var resizeTimer;
-$(window).resize(function() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(doSomething, 200);
+					
 	
-});
-
-
-function getUrlVars() {
-    var vars = {};
-    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-        vars[key] = value;
-    });
-    return vars;
 }
+
 
 // some useful common functions
 	
 function isInteger(s) {
   return (s.toString().search(/^-?[0-9]+$/) == 0);
 }		
+
 
 function openebook(ebookfile) {
 	window.location = "?pub=" + ebookfile;
@@ -1298,6 +1341,7 @@ function openebook(ebookfile) {
 function storesearch(typeinput) {
 	window.location = "?pub=store.cfm" + "&amp;search=" + search.value + "&amp;type=" + typeinput;
 }
+
 
 //	end of clicking right and left sides
 function calcPages(ele, w, c) {
@@ -1323,7 +1367,7 @@ function MM_jumpMenu(targ,selObj,restore){ //v3.0
 }	
 
 function CAT_jumpMenu(targ,selObj,restore){ //v3.0
-  eval(targ+".location='"+"?pub=store.cfm&search="+current_search+"&offer="+current_offer+"&state="+current_state+"&sort="+current_sort+"&category="+selObj.options[selObj.selectedIndex].value+"'");
+  eval(targ+".location='"+"?pub=store.cfm&search="+current_search+"&offer="+current_offer+"&state="+current_state+"&sort="+current_sort+"&category="+selObj.options[selObj.selectedIndex].value+"&ipub=#store"+"'");
   if (restore) selObj.selectedIndex=0;
 }	
 
@@ -1394,26 +1438,82 @@ function checkLength(evt)
 	}
 }
 
-function UpdateBookmark(obj){
-	$.post('/updatebookmark.cfm',$("#pageform").serialize(),function(data,obj){
-		$("#result").html(data)
-	});
-	return false
-	
-	
-	//alert("Bookmark value is:" + obj);
-    //$.ajax({
-      //  type: "POST",
-        //url: "/updatebookmark.cfm",
-        //datatype: "html",
-        //data: "bookmark=" + obj,
-        //success: function() {
-            
-          //  alert("Bookmark updated.");
-        //},
-        //error: function(){
-        //   alert("Bookmark could not be saved on the server.");
-       // }
-    //});
+
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+
+function myCallbackFunction() {
+$('#savefile').dialog('close');	
+//alert("Updates Saved");
+}
+
+function myCallbackFunctionClose() {
+window.location = "?pub=store.cfm";	
+//alert("Updates Saved");
+}
+
+
+function setEndOfContenteditable(contentEditableElement)
+{
+	var range,selection;
+	if(document.createRange)//Firefox, Chrome, Opera, Safari, IE 9+
+	{
+			try{
+		range = document.createRange();//Create a range (a range is a like the selection but invisible)
+		range.selectNodeContents(contentEditableElement);//Select the entire contents of the element with the range
+		range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
+		selection = window.getSelection();//get the selection object (allows you to change selection)
+		selection.removeAllRanges();//remove any selections already made
+		selection.addRange(range);//make the range you have just created the visible selection
+			}
+			catch(e){
+	 //catch and just suppress error
+			}
+	}
+	else if(document.selection)//IE 8 and lower
+	{ 
+		range = document.body.createTextRange();//Create a range (a range is a like the selection but invisible)
+		range.moveToElementText(contentEditableElement);//Select the entire contents of the element with the range
+		range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
+		range.select();//Select the range (make it the visible selection
+	}
+}
+
+$.fn.setCursorPosition = function(position){
+    if(this.length == 0) return this;
+    return $(this).setSelection(position, position);
+}
+
+$.fn.setSelection = function(selectionStart, selectionEnd) {
+    if(this.length == 0) return this;
+    input = this[0];
+
+    if (input.createTextRange) {
+        var range = input.createTextRange();
+        range.collapse(true);
+        range.moveEnd('character', selectionEnd);
+        range.moveStart('character', selectionStart);
+        range.select();
+    } else if (input.setSelectionRange) {
+        input.focus();
+        input.setSelectionRange(selectionStart, selectionEnd);
+    }
+
+    return this;
+}
+
+$.fn.focusEnd = function(){
+	try {
+    this.setCursorPosition(this.val().length);
+            return this;
+		}
+		catch(e){
+	 //catch and just suppress error
+		}		
 }
 
